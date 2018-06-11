@@ -115,6 +115,12 @@
 			"revisionTime": "2017-09-01T18:29:50Z"
 		},
 		{
+			"checksumSHA1": "gS5wdfbttHTrMDjINxMV72ga1nY=",
+			"path": "github.com/mindprince/gonvml",
+			"revision": "b364b296c7320f5d3dc084aa536a3dba33b68f90",
+			"revisionTime": "2018-05-14T03:13:26Z"
+		},
+		{
 			"checksumSHA1": "I87tkF1e/hrl4d/XIKFfkPRq1ww=",
 			"path": "github.com/prometheus/client_golang/prometheus",
 			"revision": "e69720d204a4aa3b0c65dc91208645ba0a52b9cd",
@@ -273,5 +279,5 @@
 			"revisionTime": "2017-12-17T18:08:21Z"
 		}
 	],
-	"rootPath": "github.com/prometheus/node_exporter"
+	"rootPath": "github.com/zhangyunjian-qiniu/node_exporter"
 }
