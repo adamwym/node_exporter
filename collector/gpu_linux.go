@@ -26,7 +26,6 @@ import (
 
 const (
 	gpuCollectorSubsystem = "gpu"
-	labels                = []string{"minor_number", "uuid", "name"}
 )
 
 type gpuCollector struct {
@@ -37,6 +36,7 @@ type gpuCollector struct {
 	gpuPowerUsage  *prometheus.Desc
 	gpuTemperature *prometheus.Desc
 	gpuFanSpeed    *prometheus.Desc
+
 	gpuTimePercent *prometheus.Desc // percentage of time during kernels are executing on the GPU.
 	gpuClockHz     *prometheus.Desc // GPU graphics clock in Hz
 	gpuMemClockHz  *prometheus.Desc // GPU memory clock in Hz
@@ -48,7 +48,10 @@ type gpuCollector struct {
 	gpuPerfState *prometheus.Desc
 }
 
-var defaultGpuCollector *gpuCollector = nil
+var (
+	defaultGpuCollector *gpuCollector = nil
+	labels                            = []string{"minor_number", "uuid", "name"}
+)
 
 func init() {
 	registerCollector(gpuCollectorSubsystem, defaultDisabled, NewgpuCollector)
@@ -110,13 +113,14 @@ func NewgpuCollector() (Collector, error) {
 
 	// defer gonvml.Shutdown()
 	runtime.SetFinalizer(defaultGpuCollector, func(obj *gpuCollector) { gonvml.Shutdown() })
+	return defaultGpuCollector, nil
 }
 
 // Update implements Collector and exposes gpu related metrics with nvml library
 func (c *gpuCollector) Update(ch chan<- prometheus.Metric) error {
 	numDevices, err := gonvml.DeviceCount()
 	if err != nil {
-		log.Printf("DeviceCount() error: %v", err)
+		log.Debugf("DeviceCount() error: %v", err)
 		numDevices = 0
 	}
 
@@ -125,33 +129,33 @@ func (c *gpuCollector) Update(ch chan<- prometheus.Metric) error {
 	for i := 0; i < int(numDevices); i++ {
 		dev, err := gonvml.DeviceHandleByIndex(uint(i))
 		if err != nil {
-			log.Printf("DeviceHandleByIndex(%d) error: %v", i, err)
+			log.Debugf("DeviceHandleByIndex(%d) error: %v", i, err)
 			continue
 		}
 
 		minorNumber, err := dev.MinorNumber()
 		if err != nil {
-			log.Printf("MinorNumber() error: %v", err)
+			log.Debugf("MinorNumber() error: %v", err)
 			continue
 		}
 		minor := strconv.Itoa(int(minorNumber))
 
 		uuid, err := dev.UUID()
 		if err != nil {
-			log.Printf("UUID() error: %v", err)
+			log.Debugf("UUID() error: %v", err)
 			continue
 		}
 
 		name, err := dev.Name()
 		if err != nil {
-			log.Printf("Name() error: %v", err)
+			log.Debugf("Name() error: %v", err)
 			continue
 		}
 
 		labelsValue := []string{minor, uuid, name}
 		totalMemory, usedMemory, err := dev.MemoryInfo()
 		if err != nil {
-			log.Printf("MemoryInfo() error: %v", err)
+			log.Debugf("MemoryInfo() error: %v", err)
 		} else {
 			ch <- prometheus.MustNewConstMetric(c.gpuUsedMemory, prometheus.CounterValue, float64(usedMemory), labelsValue...)
 			ch <- prometheus.MustNewConstMetric(c.gpuTotalMemory, prometheus.CounterValue, float64(totalMemory), labelsValue...)
@@ -159,30 +163,31 @@ func (c *gpuCollector) Update(ch chan<- prometheus.Metric) error {
 
 		dutyCycle, _, err := dev.UtilizationRates()
 		if err != nil {
-			log.Printf("UtilizationRates() error: %v", err)
+			log.Debugf("UtilizationRates() error: %v", err)
 		} else {
 			ch <- prometheus.MustNewConstMetric(c.gpuDutyCycle, prometheus.CounterValue, float64(dutyCycle), labelsValue...)
 		}
 
 		powerUsage, err := dev.PowerUsage()
 		if err != nil {
-			log.Printf("PowerUsage() error: %v", err)
+			log.Debugf("PowerUsage() error: %v", err)
 		} else {
 			ch <- prometheus.MustNewConstMetric(c.gpuPowerUsage, prometheus.CounterValue, float64(powerUsage), labelsValue...)
 		}
 
 		temperature, err := dev.Temperature()
 		if err != nil {
-			log.Printf("Temperature() error: %v", err)
+			log.Debugf("Temperature() error: %v", err)
 		} else {
 			ch <- prometheus.MustNewConstMetric(c.gpuTemperature, prometheus.CounterValue, float64(temperature), labelsValue...)
 		}
 
 		fanSpeed, err := dev.FanSpeed()
 		if err != nil {
-			log.Printf("FanSpeed() error: %v", err)
+			log.Debugf("FanSpeed() error: %v", err)
 		} else {
 			ch <- prometheus.MustNewConstMetric(c.gpuFanSpeed, prometheus.CounterValue, float64(fanSpeed), labelsValue...)
 		}
 	}
+	return nil
 }
