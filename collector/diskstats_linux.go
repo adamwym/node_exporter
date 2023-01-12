@@ -225,7 +225,7 @@ func parseDiskStats(r io.Reader) (map[string]map[int]string, error) {
 			// linux 4.19开始/proc/diskstats增加了4项新的指标
 			// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=bdca3c87fb7ad1cc61d231d37eb0d8f90d001e0c
 			// 这里先忽略新加的指标
-			parts = parts[:15]
+			parts = parts[:14]
 		}
 		dev := parts[2]
 		diskStats[dev] = map[int]string{}
