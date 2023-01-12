@@ -221,6 +221,12 @@ func parseDiskStats(r io.Reader) (map[string]map[int]string, error) {
 		if len(parts) < 4 { // we strip major, minor and dev
 			return nil, fmt.Errorf("invalid line in %s: %s", procFilePath("diskstats"), scanner.Text())
 		}
+		if len(parts) > 14 {
+			// linux 4.19开始/proc/diskstats增加了4项新的指标
+			// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=bdca3c87fb7ad1cc61d231d37eb0d8f90d001e0c
+			// 这里先忽略新加的指标
+			parts = parts[:15]
+		}
 		dev := parts[2]
 		diskStats[dev] = map[int]string{}
 		for i, v := range parts[3:] {
